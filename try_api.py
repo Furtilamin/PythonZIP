@@ -12,12 +12,11 @@ class MainHandler(tornado.web.RequestHandler):
 
         files_p = args.get('filespath')
         yad_p = args.get('yandpath')
-        zip_p = args.get('zippath')
         tok = args.get('token')
         f = zip_push
         b = bot_telegram
 
-        if f.main(files_p, zip_p, yad_p, tok) == 0:
+        if f.main(files_p, yad_p, tok) == 0:
             self.write('Files uploaded')
             b.reminder_message('Archive with files is uploaded')
         else:

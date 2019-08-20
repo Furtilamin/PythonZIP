@@ -2,7 +2,7 @@ from shutil import rmtree
 from os import path, remove, chdir, mkdir, getcwd, listdir
 from datetime import datetime
 from zipfile import ZipFile
-from yadisk import YaDisk
+from yadisk import YaDisk, exceptions
 
 
 def today_check(files_path):
@@ -15,8 +15,8 @@ def today_check(files_path):
 
 
 def zippy(files_path):
-    chdir(give_path(files_path))
     if path.exists(files_path):
+        chdir(give_path(files_path))
         try:
             mkdir(path.dirname(getcwd()) + '/zippy')
         except FileExistsError:
@@ -39,14 +39,19 @@ def zippy(files_path):
         return 1
 
 
-def upload_file(path_from, path_to, token):
+def upload_file(path_to, token):
     y = YaDisk(token=token)
-    if y.check_token():
-        y.upload(give_path(path_from) + '/today_files.zip', path_to, overwrite=True)
-        print('Archive successfully uploaded!')
-        return 0
-    else:
-        print("Can't upload files")
+    path_from = getcwd() + '/zippy/today_files.zip'
+    try:
+        if y.exists(path_to):
+            y.upload(give_path(path_from), path_to, overwrite=True)
+            print('Archive successfully uploaded!')
+            return 0
+        else:
+            print('Incorrect path to Yandex.Disk')
+            return -1
+    except exceptions.UnauthorizedError:
+        print('Wrong token!')
         return 1
 
 
@@ -62,21 +67,25 @@ def remove_file(files_path):
     return 0
 
 
-def remove_zip(path_for_remove):
-    if path.isdir(path_for_remove):
-        rmtree(path_for_remove)
+def remove_zip():
+    zip_path = getcwd() + '/zippy'
+    if path.isdir(zip_path):
+        rmtree(zip_path)
         return 0
     else:
         return 1
 
 
-def main(files_path, zip_path, yad_dst_path, token):
+def main(files_path, yad_dst_path, token):
     if zippy(give_path(files_path)) == 0:
-        if upload_file(give_path(zip_path), yad_dst_path, token) == 0:
-            remove_zip(give_path(zip_path))
+        if upload_file(yad_dst_path, token) == 0:
+            remove_zip()
             remove_file(give_path(files_path))
             chdir(path.dirname(getcwd()))
-        return 0
+            return 0
+        else:
+            remove_zip()
+            return 1
     else:
-        remove_zip(give_path(zip_path))
-        return 1
+        remove_zip()
+        return -1
